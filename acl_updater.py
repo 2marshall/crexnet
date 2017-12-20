@@ -6,8 +6,16 @@ from netmiko import ConnectHandler
 import difflib
 
 #
-# ACL Updater will Grab the OUTSIDE_ACL on both ASR's
+# ACL Updater will Update the OUTSIDE_ACL on both LEVEL3 and COX ASR's
 #
+
+#
+# New Features to Add
+#
+
+# 1. Ability to remove ACL's
+# 2.
+
 
 
 def netmiko_device_data(node_ip, username, password, enable_secret):
