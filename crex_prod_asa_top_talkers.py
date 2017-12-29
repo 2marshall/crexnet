@@ -6,8 +6,8 @@ import re
 
 CONFIG_DATE = str(datetime.today().strftime('%m%d%Y'))
 CONFIG_TIME = str(datetime.today().strftime('%I%M%S%p'))
-OS_TYPE = 'cisco_asa'
 NODE_LIST = ['192.168.41.1']
+OS_TYPE = 'cisco_asa'
 
 
 def top_talkers():

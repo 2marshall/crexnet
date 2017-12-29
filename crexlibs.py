@@ -24,7 +24,7 @@ class NodeSetup(object):
         print(self.os_type)
 
         node_data = {
-            'node_type': self.os_type,
+            'device_type': self.os_type,
             'ip': node,
             'username': self.username,
             'password': self.password,
