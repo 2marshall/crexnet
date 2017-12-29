@@ -21,8 +21,6 @@ class NodeSetup(object):
 
     def initiate_connection(self, node):
 
-        print(self.os_type)
-
         node_data = {
             'device_type': self.os_type,
             'ip': node,

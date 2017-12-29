@@ -27,19 +27,19 @@ def top_talkers():
     node_setup = NodeSetup(NODE_LIST, OS_TYPE)
 
     print("")
+    print("")
     print("\tPreparing Output.......")
-    print("")
-    print("")
 
     for node in node_setup.node_list:
 
         node_connect = node_setup.initiate_connection(node)
         node_connect.enable()  # entering enable mode
         host_connection_count = re.search(r'^\d+', node_connect.send_command('sh conn count')).group(0)
-        print("Total Active Connections: {}".format(host_connection_count))
+        print("\tTotal Active Connections: {}".format(host_connection_count))
+        print("")
         print("")
         filename = ('sh-conn-{}-{}-{}.log'.format(node, CONFIG_DATE, CONFIG_TIME))
-        host_connections_output = node_connect.send_command('sh conn')
+        host_connections_output = node_connect.send_command_timing('sh conn', delay_factor=4)
         with open('asa_top_talkers_logs/{]'.format(filename), 'w') as file:
             file.write(host_connections_output)
 

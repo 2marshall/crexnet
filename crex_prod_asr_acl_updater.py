@@ -16,7 +16,7 @@ from crexlibs import diff_data
 PERMIT_SEQUENCE_NUM = 100000
 SEQUENCE_SKIP = 10
 COMMAND = 'show access-list OUTSIDE_ACL'
-NODE_LIST = ['192.168.40.10']
+NODE_LIST = ['192.168.40.10', '192.168.40.11']
 OS_TYPE = 'cisco_ios'
 
 
