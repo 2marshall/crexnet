@@ -20,6 +20,12 @@ def top_talkers():
     # grab output and sort by top 50 hosts
     # cat /tmp/ASA_show_conn_ouput  |awk '{print $9, $1, $3, $5}' |sort -nr | head -50
 
+    #
+    # Features
+    #
+    # 1. Convert bytes to mbits
+    #
+
     print("")
     print("\t========= Prod ASA 50 Top Talkers by Bytes =========")
     print("")
@@ -45,7 +51,17 @@ def top_talkers():
 
         # outputting the top 50 host connections by byte count on the prod asa
 
-        os.system("cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | head -50" % filename)
+        print("== Bytes")
+
+        top_50_talkers = str(os.system("cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | head -50 > /dev/null" % filename)).split('\n')
+        print(type(top_50_talkers))
+        for host in top_50_talkers:
+            print(host)
+            host_total_bytes = int(re.search(r'^\d+', host).group(0))
+            host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
+            host_bytes_to_kbytes = host_total_bytes / 1024
+            host_kbytes_to_mbytes = str(host_bytes_to_kbytes / 1024)
+            print("{} MB {}".format(host_kbytes_to_mbytes, host_connection_output))
 
         print("")
         print("")
