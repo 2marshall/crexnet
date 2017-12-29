@@ -6,7 +6,7 @@ import re
 
 CONFIG_DATE = str(datetime.today().strftime('%m%d%Y'))
 CONFIG_TIME = str(datetime.today().strftime('%I%M%S%p'))
-OS_TYPE = 'Cisco_ASA'
+OS_TYPE = 'cisco_asa'
 NODE_LIST = ['192.168.41.1']
 
 
@@ -33,7 +33,7 @@ def top_talkers():
 
     for node in node_setup.node_list:
 
-        node_connect = node_setup.initiate_connection(node, OS_TYPE)
+        node_connect = node_setup.initiate_connection(node)
         node_connect.enable()  # entering enable mode
         host_connection_count = re.search(r'^\d+', node_connect.send_command('sh conn count')).group(0)
         print("Total Active Connections: {}".format(host_connection_count))

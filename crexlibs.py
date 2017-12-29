@@ -19,23 +19,10 @@ class NodeSetup(object):
         self.node_list = node_list
         self.os_type = os_type
 
-    def initiate_connection(self, node, os_type):
-
-        if "Juniper" in os_type:
-            os_type = 'juniper'
-        elif "Cisco_IOS" in os_type:
-            os_type = 'cisco_ios'
-        elif "Cisco_ASA" in os_type:
-            os_type = 'cisco_asa'
-        elif "Arista" in os_type:
-            os_type = 'arista_eos'
-        elif "Aruba" in os_type:
-            os_type = 'aruba_os'
-        else:
-            os_type = 'linux'
+    def initiate_connection(self, node):
 
         node_data = {
-            'node_type': os_type,
+            'node_type': self.os_type,
             'ip': node,
             'username': self.username,
             'password': self.password,
