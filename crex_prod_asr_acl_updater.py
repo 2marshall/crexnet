@@ -16,8 +16,8 @@ from crexlibs import diff_data
 PERMIT_SEQUENCE_NUM = 100000
 SEQUENCE_SKIP = 10
 COMMAND = 'show access-list OUTSIDE_ACL'
-OS_TYPE = 'cisco_ios'
 NODE_LIST = ['192.168.40.10']
+OS_TYPE = 'cisco_ios'
 
 
 def acl_updater():

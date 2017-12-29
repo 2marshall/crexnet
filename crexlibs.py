@@ -8,7 +8,7 @@ class NodeSetup(object):
     """
     User must provide node_list list() and os_type str() when instantiating this object
     :param node_list - a list of IP's ['192.168.40.11', '192.168.40.10']
-    :param os_type - a string matching the Netmiko OS type. Here are choices.  Juniper, Cisco_IOS, Cisco_ASA, Arista, Aruba,
+    :param os_type - a string matching the Netmiko OS type. Here are choices.  juniper, cisco_ios, cisco_asa, cisco_xe
     """
 
     def __init__(self, node_list, os_type):
@@ -20,6 +20,8 @@ class NodeSetup(object):
         self.os_type = os_type
 
     def initiate_connection(self, node):
+
+        print(self.os_type)
 
         node_data = {
             'node_type': self.os_type,
