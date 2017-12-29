@@ -17,6 +17,8 @@ print("")
 menu_decision = str()
 while menu_decision.lower() == "" or menu_decision.lower() != '1' or menu_decision.lower() != '2':
     menu_decision = input("\t>>> ")
+    print(menu_decision)
+    print(type(menu_decision))
 print("")
 
 if menu_decision.lower() == '1':
