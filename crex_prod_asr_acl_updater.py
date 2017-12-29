@@ -17,7 +17,7 @@ PERMIT_SEQUENCE_NUM = 100000
 SEQUENCE_SKIP = 10
 COMMAND = 'show access-list OUTSIDE_ACL'
 OS_TYPE = 'Cisco_IOS'
-NODE_LIST = ['192.168.40.10', '192.168.40.11']
+NODE_LIST = ['192.168.40.10']
 
 
 def acl_updater():
