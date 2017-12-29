@@ -45,7 +45,7 @@ def top_talkers():
 
         # outputting the top 50 host connections by byte count on the prod asa
 
-        os.system("cat asa_top_talkers_logs/{} | awk '{print $9, $1, $3, $5}' | sort -nr | head -50".format(filename))
+        os.system("cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | head -50" % filename)
 
         print("")
         print("")
