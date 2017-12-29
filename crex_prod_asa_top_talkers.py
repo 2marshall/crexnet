@@ -40,7 +40,7 @@ def top_talkers():
         print("")
         filename = ('sh-conn-{}-{}-{}.log'.format(node, CONFIG_DATE, CONFIG_TIME))
         host_connections_output = node_connect.send_command_timing('sh conn', delay_factor=4)
-        with open('asa_top_talkers_logs/{]'.format(filename), 'w') as file:
+        with open('asa_top_talkers_logs/{}'.format(filename), 'w') as file:
             file.write(host_connections_output)
 
         # outputting the top 50 host connections by byte count on the prod asa
