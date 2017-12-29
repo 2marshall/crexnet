@@ -31,6 +31,7 @@ def acl_updater():
 
     # Global Variables
 
+    print("")
     print("\t========= Prod ASR ACL UPDATER =========")
     print("")
     print("Are you Adding SUBNETS or HOSTS to the ACL?")
