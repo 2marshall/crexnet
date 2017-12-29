@@ -1,137 +1,23 @@
 from ciscoconfparse import CiscoConfParse
 import re
-import getpass
-from netmiko import ConnectHandler
-# from easysnmp import Session
-import difflib
+from crexlibs import NodeSetup
+from crexlibs import diff_data
 
 #
 # ACL Updater will Update the OUTSIDE_ACL on both LEVEL3 and COX ASR's
 #
 
 #
-# New Features to Add
+# --- New Features to Add ---
 #
-
 # 1. Ability to remove ACL's
 # 2.
 
-
-
-def netmiko_device_data(node_ip, username, password, enable_secret):
-
-    netmiko_device_data = {
-        'device_type': 'cisco_ios',
-        'ip': node_ip,
-        'username': username,
-        'password': password,
-        'secret': enable_secret,
-        'port': 22,
-        # 'verbose': True,
-    }
-
-    return netmiko_device_data
-
-
-# def netmiko_node_os_type(node):
-#     """
-#     :param node: device name
-#     :return:
-#     """
-#
-#     session = Session(hostname=node, community='OJ3yEgsBQ7', version=2)
-#
-#     try:
-#
-#         device_data = str(session.get('.1.3.6.1.2.1.1.1.0'))
-#
-#         if "Juniper" in device_data:
-#             netmiko_node_os_type = 'juniper'
-#         elif "Cisco" in device_data:
-#             netmiko_node_os_type = 'cisco_ios'
-#         elif "Arista" in device_data:
-#             netmiko_node_os_type = 'arista_eos'
-#         elif "Aruba" in device_data:
-#             netmiko_node_os_type = 'aruba_os'
-#
-#         return netmiko_node_os_type  # Returns the value derived from the chosen node_type variable above. so if it's Junper the string value is juniper. if it's Cisco the assignement is to cisco_ios. Arista it's arista_eos
-#         # This value can than be referenced using the get_device_type function.
-#         # return to set variables to be a value from a function
-#
-#     except:
-#
-#         # The above SNMP get string is invalid so defaulting to a linux_ssh node type
-#
-#         netmiko_node_os_type = 'linux_ssh'
-#         return netmiko_node_os_type
-
-
-def netmiko_get_username():
-    netmiko_get_username = input("Username: ")
-    return netmiko_get_username
-
-
-def netmiko_get_password():
-    netmiko_get_password = getpass.getpass()
-    return netmiko_get_password
-
-def netmiko_get_enable_pass():
-    netmiko_get_enable_password = getpass.getpass('Enable Password: ')
-    return netmiko_get_enable_password
-
-
-def node_connection(node, username, password, enable_pass):
-    """
-    Setting up and connecting to remote Node via ssh
-    :return:
-    """
-
-    # os_type, ciscoconfparse_node_type = netmiko_node_os_type(node)
-    device_data = netmiko_device_data(node, username, password, enable_pass)
-    device_connection = ConnectHandler(**device_data)
-
-    return device_connection
-
-
-def node_list():
-    node_list = ['192.168.40.10', '192.168.40.11']
-    # node_list = ['lab1-1-cc01']
-    # node_list_cleaned = []
-    # for node in node_list:
-    #     node_clean = node.strip()
-    #     node_list_cleaned.append(node_clean)
-
-    return node_list
-
-
-def node_credential_setup():
-    """
-    Joining All Device Login Functions into a Single Function Call. Username, Password, Node List, Show Commands
-    :return:
-    """
-
-    username = netmiko_get_username()
-    password = netmiko_get_password()
-    enable_pass = netmiko_get_enable_pass()
-    nodes = node_list()
-
-    return username, password, enable_pass, nodes
-
-
-def diff_data(data_before, data_after, node):
-
-    """ checks pre and post files and builds diff results file. data_before and data_after need to be lists
-    :return:
-    """
-
-    diff_library = difflib.Differ()
-    diff = diff_library.compare(data_before, data_after)    # data_before and data_after must be lists
-
-    print("")
-    print("\t========= CHANGES BELOW {} =========".format(node))
-    print("")
-    print('\n'.join(diff))
-    print("")
+PERMIT_SEQUENCE_NUM = 100000
+SEQUENCE_SKIP = 10
+COMMAND = 'show access-list OUTSIDE_ACL'
+OS_TYPE = 'Cisco_IOS'
+NODE_LIST = ['192.168.40.10', '192.168.40.11']
 
 
 def acl_updater():
@@ -145,11 +31,7 @@ def acl_updater():
 
     # Global Variables
 
-    PERMIT_SEQUENCE_NUM = 100000
-    SEQUENCE_SKIP = 10
-    COMMAND = 'show access-list OUTSIDE_ACL'
-
-    print("\t========= ACL UPDATER =========")
+    print("\t========= Prod ASR ACL UPDATER =========")
     print("")
     print("Are you Adding SUBNETS or HOSTS to the ACL?")
     subnets_or_hosts = input(">>> ")
@@ -186,13 +68,15 @@ def acl_updater():
                 print("")
                 break
 
-    username, password, enable_pass, nodes = node_credential_setup()    # grabbing user credentials for login
+    # Initiating the class to setup the connection to the remote nodes
 
-    for node in nodes:
+    node_setup = NodeSetup(NODE_LIST, OS_TYPE)
 
-        device_connection = node_connection(node, username, password, enable_pass)   # creating device connection
-        device_connection.enable()  # entering enable mode
-        command_output_before = device_connection.send_command(COMMAND).split('\n')    # sending command to node
+    for node in node_setup.node_list:
+
+        node_connect = node_setup.initiate_connection(node, OS_TYPE)
+        node_connect.enable()  # entering enable mode
+        command_output_before = node_connect.send_command(COMMAND).split('\n')    # sending command to node
 
         # sending command through ciscoconfparse so we can begin iterating over the seq. numbers
 
@@ -228,7 +112,7 @@ def acl_updater():
                         for host in denied_hosts:
 
                             commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip host {} any'.format(final_sequence_num, host)]
-                            device_connection.send_config_set(commands)
+                            node_connect.send_config_set(commands)
                             final_sequence_num += SEQUENCE_SKIP
 
                     elif subnets_or_hosts == 'subnets':
@@ -290,16 +174,16 @@ def acl_updater():
                                 print("MASK NOT CORRECTLY SPECIFICED")
 
                             commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask)]
-                            device_connection.send_config_set(commands)
+                            node_connect.send_config_set(commands)
                             final_sequence_num += SEQUENCE_SKIP
 
         # writing config to ASR
 
-        device_write = device_connection.send_command('wr')
+        device_write = node_connect.send_command('wr')
 
         # grabbing post output config and performing DIFF here of command_output before and after
 
-        command_output_after = device_connection.send_command(COMMAND).split('\n')  # sending command to node
+        command_output_after = node_connect.send_command(COMMAND).split('\n')  # sending command to node
 
         # performing diff on ACL before and after
 

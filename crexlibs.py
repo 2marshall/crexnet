@@ -1,0 +1,68 @@
+import getpass
+from netmiko import ConnectHandler
+import difflib
+
+
+class NodeSetup(object):
+
+    """
+    User must provide node_list list() and os_type str() when instantiating this object
+    :param node_list - a list of IP's ['192.168.40.11', '192.168.40.10']
+    :param os_type - a string matching the Netmiko OS type. Here are choices.  Juniper, Cisco_IOS, Cisco_ASA, Arista, Aruba,
+    """
+
+    def __init__(self, node_list, os_type):
+
+        self.username = input('Username: ')
+        self.password = getpass.getpass('Password: ')
+        self.enable_pass = getpass.getpass('Enable Password: ')
+        self.node_list = node_list
+        self.os_type = os_type
+
+    def initiate_connection(self, node, os_type):
+
+        if "Juniper" in os_type:
+            os_type = 'juniper'
+        elif "Cisco_IOS" in os_type:
+            os_type = 'cisco_ios'
+        elif "Cisco_ASA" in os_type:
+            os_type = 'cisco_asa'
+        elif "Arista" in os_type:
+            os_type = 'arista_eos'
+        elif "Aruba" in os_type:
+            os_type = 'aruba_os'
+        else:
+            os_type = 'linux'
+
+        node_data = {
+            'node_type': os_type,
+            'ip': node,
+            'username': self.username,
+            'password': self.password,
+            'secret': self.enable_pass,
+            'port': 22,
+            # 'verbose': True,
+        }
+
+        # performing connection to remote node
+
+        node_connection = ConnectHandler(**node_data)
+
+        return node_connection
+
+
+def diff_data(data_before, data_after, node):
+
+    """ checks pre and post files and builds diff results file. data_before and data_after need to be lists
+    :return:
+    """
+
+    diff_library = difflib.Differ()
+    diff = diff_library.compare(data_before, data_after)    # data_before and data_after must be lists
+
+    print("")
+    print("\t========= CHANGES BELOW {} =========".format(node))
+    print("")
+    print('\n'.join(diff))
+    print("")
+
