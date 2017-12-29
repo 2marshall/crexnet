@@ -15,7 +15,7 @@ print("{:<} {:.^31} {:>}".format("\tProd ASA 50 Top Talkers by Bytes", ".", "2")
 print("")
 print("")
 menu_decision = str()
-while menu_decision.lower() == "" or menu_decision.lower() != '1' or menu_decision.lower() != '2':
+while menu_decision.lower() == "" and menu_decision.lower() != '1' and menu_decision.lower() != '2':
     menu_decision = input("\t>>> ")
     print(menu_decision)
     print(type(menu_decision))
