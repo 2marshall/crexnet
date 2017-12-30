@@ -118,8 +118,8 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
             host_total_bytes = int(re.search(r'^\d+', host).group(0))
             host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
             host_bytes_to_kbytes = int(host_total_bytes / 1024)
-            host_kbytes_to_mbytes_str = str(host_bytes_to_kbytes / 1024)
-            host_kbytes_to_mbytes_int = int(host_bytes_to_kbytes / 1024)
+            host_kbytes_to_mbytes_str = str(int(host_bytes_to_kbytes / 1024))
+            host_kbytes_to_mbytes_int = host_bytes_to_kbytes / 1024
 
             if host_kbytes_to_mbytes_int > 50:
 
