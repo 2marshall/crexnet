@@ -1,7 +1,7 @@
 from crexlibs import NodeSetup
 from datetime import datetime
-import os
 import re
+import subprocess
 
 
 CONFIG_DATE = str(datetime.today().strftime('%m%d%Y'))
@@ -52,11 +52,12 @@ def top_talkers():
         # outputting the top 50 host connections by byte count on the prod asa
 
         print("== Bytes")
+        print("")
 
-        top_50_talkers = str(os.system("cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | head -50 > /dev/null" % filename)).split('\n')
-        print(type(top_50_talkers))
+        top_50_talkers = subprocess.check_output(["cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | tail -n +1 | head -50" % filename], shell=True, stderr=subprocess.STDOUT).decode('utf-8').split('\n')
+
         for host in top_50_talkers:
-            print(host)
+            print("Host Line: {}".format(host))
             host_total_bytes = int(re.search(r'^\d+', host).group(0))
             host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
             host_bytes_to_kbytes = host_total_bytes / 1024
