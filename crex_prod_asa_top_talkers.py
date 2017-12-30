@@ -55,11 +55,18 @@ def top_talkers():
 
         for host in top_50_talkers:
 
-            host_total_bytes = int(re.search(r'^\d+', host).group(0))
-            host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
-            host_bytes_to_kbytes = int(host_total_bytes / 1024)
-            host_kbytes_to_mbytes = str(int(host_bytes_to_kbytes / 1024))
-            print("{} MB {}".format(host_kbytes_to_mbytes, host_connection_output))
+            try:
+
+                host_total_bytes = int(re.search(r'^\d+', host).group(0))
+                host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
+                host_bytes_to_kbytes = int(host_total_bytes / 1024)
+                host_kbytes_to_mbytes = str(int(host_bytes_to_kbytes / 1024))
+                print("{} MB {}".format(host_kbytes_to_mbytes, host_connection_output))
+
+            except:
+
+                print("")
+                print("")
 
         print("")
         print("")
