@@ -109,6 +109,8 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
 
     top_50_talkers = subprocess.check_output(["cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | tail -n +1 | head -50" % filename], shell=True, stderr=subprocess.STDOUT).decode('utf-8').split('\n')
 
+    # iterating over each host and converting bytes to MB
+
     for host in top_50_talkers:
 
         try:
@@ -116,14 +118,30 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
             host_total_bytes = int(re.search(r'^\d+', host).group(0))
             host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
             host_bytes_to_kbytes = int(host_total_bytes / 1024)
-            host_kbytes_to_mbytes = str(int(host_bytes_to_kbytes / 1024))
-            print("{} MB {}".format(host_kbytes_to_mbytes, host_connection_output))
+            host_kbytes_to_mbytes_str = str(host_bytes_to_kbytes / 1024)
+            host_kbytes_to_mbytes_int = host_bytes_to_kbytes / 1024
+
+            if host_kbytes_to_mbytes_int > 50:
+
+                trouble_ip = re.search(r'(?<=[U,T][D,C]P\s).*(?=:\d{5})', host_connection_output).group(0)
+                nslookup_trouble_ip = subprocess.check_output(["nslookup %s" % trouble_ip], shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+                nslookup_trouble_ip_parse = re.search(r'(?<=Non-authoritative answer:\n).*', nslookup_trouble_ip).group(0)
+                print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
+                print("")
+                print("NSLOOKUP on {}: {}".format(trouble_ip, nslookup_trouble_ip_parse))
+                print("")
+
+            else:
+
+                print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
 
         except:
 
             print("")
             print("")
             subprocess.call(["rm -rvf asa_top_talkers_logs/%s" % filename], shell=True)
+            print("")
+            print("")
 
     return
 
