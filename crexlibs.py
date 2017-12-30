@@ -86,7 +86,7 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
         print("")
 
         filename = ('sh-conn-{}-{}-{}.log'.format(single_host_check, config_date, config_time))
-        host_connections_output = node_connect.send_command_timing('sh conn address {}'.format(single_host_check), delay_factor=3)
+        host_connections_output = node_connect.send_command('sh conn address {}'.format(single_host_check), delay_factor=3)
         with open('asa_top_talkers_logs/{}'.format(filename), 'w') as file:
             file.write(host_connections_output)
 
@@ -101,7 +101,7 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
         print("")
 
         filename = ('sh-conn-{}-{}-{}.log'.format(asa_node, config_date, config_time))
-        host_connections_output = node_connect.send_command_timing('sh conn', delay_factor=4)
+        host_connections_output = node_connect.send_command('sh conn', delay_factor=4)
         with open('asa_top_talkers_logs/{}'.format(filename), 'w') as file:
             file.write(host_connections_output)
 
@@ -128,7 +128,7 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
 
 def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time):
 
-    host_embryonic_conn_output = str(node_connect.send_command('show local-host | in host|embryonic')).split('\n')
+    host_embryonic_conn_output = node_connect.send_command('show local-host | in host|embryonic').split('\n')
     config_parsed = CiscoConfParse(host_embryonic_conn_output, syntax='ios')
 
     for parent in config_parsed.find_objects(r'^local'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
