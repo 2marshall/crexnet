@@ -10,13 +10,15 @@ print("")
 print("\t\t============== Crexendo Python Network Automation Tasks ==============")
 print("")
 print("")
-print("\t======= General Automation Tasks")
+print("\t======= Production Automation Tasks")
 print("")
-print("{:<} {:.^35} {:>}".format("\tProd ASR OUTSIDE_ACL Updater", ".", "1"))
-print("{:<} {:.^31} {:>}".format("\tProd ASA 50 Top Talkers by Bytes", ".", "2"))
-print("{:<} {:.^31} {:>}".format("\tCorp ASA 50 Top Talkers by Bytes", ".", "3"))
-print("{:<} {:.^11} {:>}".format("\tProd ASA Hosts w/Half Open Connections (SYN Attack)", ".", "4"))
+print("{:<} {:.^45} {:>}".format("\tProd ASR OUTSIDE_ACL Updater", ".", "1"))
+print("{:<} {:.^41} {:>}".format("\tProd ASA 50 Top Talkers by Bytes", ".", "2"))
+print("{:<} {:.^15} {:>}".format("\tProd ASA Hosts w/Over 100 Half-Open Connections (SYN Attack)", ".", "3"))
 print("")
+print("\t======= Corporate Automation Tasks")
+print("")
+print("{:<} {:.^41} {:>}".format("\tCorp ASA 50 Top Talkers by Bytes", ".", "4"))
 print("")
 
 # If all of these statements are true than repeat while loop. otherwise move on
@@ -32,13 +34,13 @@ if menu_decision.lower() == '1':
 
 elif menu_decision.lower() == '2':
 
-    crex_prod_asa_top_talkers.top_talkers()
+    crex_prod_asa_top_talkers.prod_asa_top_talkers_bytes()
 
 elif menu_decision.lower() == '3':
 
-    crex_corp_asa_top_talkers.top_talkers()
+    crex_prod_asa_top_embryonic_conns.prod_asa_top_embryonic_conns()
 
 elif menu_decision.lower() == '4':
 
-    crex_prod_asa_top_embryonic_conns.top_embryonic_conns()
+    crex_corp_asa_top_talkers.corp_asa_top_talkers_bytes()
 
