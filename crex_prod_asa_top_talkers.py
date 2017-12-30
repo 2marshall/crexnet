@@ -51,17 +51,14 @@ def top_talkers():
 
         # outputting the top 50 host connections by byte count on the prod asa
 
-        print("== Bytes")
-        print("")
-
         top_50_talkers = subprocess.check_output(["cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | tail -n +1 | head -50" % filename], shell=True, stderr=subprocess.STDOUT).decode('utf-8').split('\n')
 
         for host in top_50_talkers:
-            print("Host Line: {}".format(host))
+
             host_total_bytes = int(re.search(r'^\d+', host).group(0))
             host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
-            host_bytes_to_kbytes = host_total_bytes / 1024
-            host_kbytes_to_mbytes = str(host_bytes_to_kbytes / 1024)
+            host_bytes_to_kbytes = int(host_total_bytes / 1024)
+            host_kbytes_to_mbytes = str(int(host_bytes_to_kbytes / 1024))
             print("{} MB {}".format(host_kbytes_to_mbytes, host_connection_output))
 
         print("")
