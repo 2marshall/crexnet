@@ -125,7 +125,7 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
 
                 trouble_ip = re.search(r'(?<=[U,T][D,C]P\s).*(?=:\d{5})', host_connection_output).group(0)
                 nslookup_trouble_ip = subprocess.check_output(["nslookup %s" % trouble_ip], shell=True, stderr=subprocess.STDOUT).decode('utf-8')
-                nslookup_trouble_ip_parse = re.search(r'(?<=Non-authoritative answer:\n).*', nslookup_trouble_ip).group(0)
+                nslookup_trouble_ip_parse = re.search(r'(?<=Non-authoritative answer:\n).*(?=\n)', nslookup_trouble_ip).group(0)
                 print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
                 print("")
                 print("NSLOOKUP on {}: {}".format(trouble_ip, nslookup_trouble_ip_parse))
