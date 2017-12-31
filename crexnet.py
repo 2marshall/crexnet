@@ -4,6 +4,7 @@ import crex_prod_asr_acl_updater
 import crex_prod_asa_top_talkers
 import crex_corp_asa_top_talkers
 import crex_prod_asa_top_embryonic_conns
+import crex_corp_asa_top_embryonic_conns
 
 print("")
 print("")
@@ -19,12 +20,13 @@ print("")
 print("\t======= Corporate Automation Tasks")
 print("")
 print("{:<} {:.^41} {:>}".format("\tCorp ASA 50 Top Talkers by Bytes", ".", "4"))
+print("{:<} {:.^13} {:>}".format("\tCorp ASA Hosts w/Over 100 Half-Open Connections (SYN Attack)", ".", "5"))
 print("")
 
 # If all of these statements are true than repeat while loop. otherwise move on
 
 menu_decision = str()
-while menu_decision.lower() == "" and menu_decision.lower() != '1' and menu_decision.lower() != '2' and menu_decision.lower() != '3' and menu_decision.lower() != '4':
+while menu_decision.lower() == "" and menu_decision.lower() != '1' and menu_decision.lower() != '2' and menu_decision.lower() != '3' and menu_decision.lower() != '4' and menu_decision.lower() != '5':
     menu_decision = input("\t>>> ")
 print("")
 
@@ -43,4 +45,9 @@ elif menu_decision.lower() == '3':
 elif menu_decision.lower() == '4':
 
     crex_corp_asa_top_talkers.corp_asa_top_talkers_bytes()
+
+elif menu_decision.lower() == '5':
+
+    crex_corp_asa_top_embryonic_conns.corp_asa_top_embryonic_conns()
+
 
