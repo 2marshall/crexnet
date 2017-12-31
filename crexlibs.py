@@ -174,13 +174,16 @@ def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time):
 
         if embryonic_conn_count >= 100:
 
+            embryonic_host_found = True
+
             print("Host IP: {} Half-Open Connections: {}".format(host_ip, embryonic_conn_count))
 
             asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, host_ip, single_host_check=host_ip)
 
-        else:
+    if not embryonic_host_found:
 
-            print("")
-            print("\t *** GOOD NEWS NO HOSTS W/OVER 100 HALF-OPEN CONNECTIONS ***")
+        print("")
+        print("\t *** GOOD NEWS NO HOSTS W/OVER 100 HALF-OPEN CONNECTIONS ***")
+        print("")
 
     return
