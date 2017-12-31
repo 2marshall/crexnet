@@ -178,4 +178,9 @@ def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time):
 
             asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, host_ip, single_host_check=host_ip)
 
+        else:
+
+            print("")
+            print("\t *** GOOD NEWS NO HOSTS W/OVER 100 HALF-OPEN CONNECTIONS ***")
+
     return
