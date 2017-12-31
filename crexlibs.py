@@ -156,6 +156,8 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
 
 def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time):
 
+    embryonic_host_found = False
+
     host_embryonic_conn_output = node_connect.send_command('show local-host | in host|embryonic').split('\n')
     config_parsed = CiscoConfParse(host_embryonic_conn_output, syntax='ios')
 
