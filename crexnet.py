@@ -32,7 +32,7 @@ print("")
 
 if menu_decision.lower() == '1':
 
-    crex_prod_asr_acl_updater.acl_updater()
+    crex_prod_asr_acl_updater.prod_asr_acl_updater()
 
 elif menu_decision.lower() == '2':
 
