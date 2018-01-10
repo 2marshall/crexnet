@@ -19,7 +19,10 @@ def prod_asa_top_talkers_bytes():
     print("\t========= Prod ASA Top 50 Top-Talkers by Bytes =========")
     print("")
 
+    # Setting up Connect Handler Object
+
+    node_obj = Node(OS_TYPE, CONFIG_DATE, CONFIG_TIME)  # initiating object Node and passing in variables.
+
     for node in NODE_LIST:  # iterating through NODE_LIST
-        node_obj = Node(node, OS_TYPE, CONFIG_DATE, CONFIG_TIME)  # initiating object Node and passing in variables.
-        node_obj.run_function(asa_top_50_top_talkers_bytes, CONFIG_DATE, CONFIG_TIME, SINGLE_HOST_CHECK)  # running run_top_talkers function
+        node_obj.run_function(asa_top_50_top_talkers_bytes, node, CONFIG_DATE, CONFIG_TIME, SINGLE_HOST_CHECK)  # running run_top_talkers function
 

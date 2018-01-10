@@ -20,22 +20,20 @@ class Node:
     :param config_time - passed in time str(datetime.today().strftime('%I%M%S%p'))
     """
 
-    def __init__(self, node, os_type, config_date, config_time):
+    def __init__(self, os_type, config_date, config_time):
 
         self.username = input('Username: ')
         self.password = getpass.getpass('Password: ')
         self.enable_pass = getpass.getpass('Enable Password: ')
-        self.node = node
         self.os_type = os_type
         self.connection = None
-
         self.config_date = config_date
         self.config_time = config_time
 
-    def initiate_connection(self):
+    def initiate_connection(self, node):
         node_data = {
             'device_type': self.os_type,
-            'ip': self.node,
+            'ip': node,
             'username': self.username,
             'password': self.password,
             'secret': self.enable_pass,
@@ -49,10 +47,10 @@ class Node:
     # Passing in the run_function method with the name of the function being executed along with unique variables used in functions below.
     # This allows for any call within this class to be executed
 
-    def run_function(self, function_name, config_date, config_time, single_host_check):
-        self.initiate_connection()
+    def run_function(self, function_name, node, config_date, config_time, single_host_check):
+        self.initiate_connection(node)
         self.connection.enable()
-        function_name(self.connection, config_date, config_time, self.node, single_host_check)
+        function_name(self.connection, node, config_date, config_time, single_host_check)
 
 
 def diff_data(data_before, data_after, node):
@@ -75,7 +73,7 @@ def diff_data(data_before, data_after, node):
     print("")
 
 
-def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_node, single_host_check):
+def asa_top_50_top_talkers_bytes(node_connect, asa_node, config_date, config_time, single_host_check):
 
     """
     This provides you with the top 50 hosts who have consumed the most data through the ASA
@@ -168,7 +166,7 @@ def asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, asa_nod
     return
 
 
-def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time, asa_node, single_host_check):
+def asa_top_50_host_embryonic_conns(node_connect, asa_node, config_date, config_time, single_host_check):
 
     embryonic_host_found = False
 
@@ -205,7 +203,7 @@ def asa_top_50_host_embryonic_conns(node_connect, config_date, config_time, asa_
     return
 
 
-def ios_acl_updater(node_connect, config_date, config_time, node, single_host_check):
+def ios_acl_updater(node_connect, node, config_date, config_time, single_host_check):
     """
     Stuff
     :return:
