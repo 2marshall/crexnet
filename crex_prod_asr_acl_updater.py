@@ -1,5 +1,4 @@
-from crexlibs import *
-from datetime import datetime
+from crexlibs import NetAutomationTasks
 
 #
 # ACL Updater will Update the OUTSIDE_ACL on both LEVEL3 and COX ASR's
@@ -11,11 +10,8 @@ from datetime import datetime
 # 1. Ability to remove ACL's
 # 2.
 
-CONFIG_DATE = str(datetime.today().strftime('%m%d%Y'))
-CONFIG_TIME = str(datetime.today().strftime('%I%M%S%p'))
 NODE_LIST = ['192.168.40.10', '192.168.40.11']
 OS_TYPE = 'cisco_ios'
-SINGLE_HOST_CHECK = True
 
 
 def prod_asr_acl_updater():
@@ -29,8 +25,8 @@ def prod_asr_acl_updater():
 
     # Setting up Connect Handler Object
 
-    net_automate = NetAutomationTasks(OS_TYPE, CONFIG_DATE, CONFIG_TIME)  # initiating object Node and passing in variables.
-    net_automate.ios_acl_updater(NODE_LIST, CONFIG_DATE, CONFIG_TIME, SINGLE_HOST_CHECK) # running function within crexlibs library
+    net_automate = NetAutomationTasks(OS_TYPE)  # initiating network automation object which provides all needed connection related variable for our devices
+    net_automate.ios_acl_updater(NODE_LIST) # running specific ios_acl_updater
 
 
 

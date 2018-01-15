@@ -20,15 +20,13 @@ class NetAutomationTasks:
     :param config_time - passed in time str(datetime.today().strftime('%I%M%S%p'))
     """
 
-    def __init__(self, os_type, config_date, config_time):
+    def __init__(self, os_type):
 
         self.username = input('Username: ')
         self.password = getpass.getpass('Password: ')
         self.enable_pass = getpass.getpass('Enable Password: ')
         self.os_type = os_type
         self.connection = None
-        self.config_date = config_date
-        self.config_time = config_time
 
     def initiate_connection(self, node):
         node_data = {
@@ -47,12 +45,9 @@ class NetAutomationTasks:
     # Passing in the run_function method with the name of the function being executed along with unique variables used in functions below.
     # This allows for any call within this class to be executed
 
-    def run_function(self, function_name, node_list, config_date, config_time, single_host_check):
-        function_name(self.connection, node_list, config_date, config_time, single_host_check)
-
-    def ios_acl_updater(self, node_list, config_date, config_time, single_host_check):
+    def ios_acl_updater(self, node_list):
         """
-        Stuff
+        Updates outside ACL on Crexendo's Production ASR's
         :return:
         """
 
@@ -99,18 +94,15 @@ class NetAutomationTasks:
                     break
 
         for node in node_list:
-
+            print("")
+            print("\t========= Working on {} .... =========".format(node))
+            print("")
             self.initiate_connection(node)
             self.connection.enable()
-
             command_output_before = self.connection.send_command(COMMAND).split('\n')  # sending command to node
-
             # sending command through ciscoconfparse so we can begin iterating over the seq. numbers
-
             config_parsed = CiscoConfParse(command_output_before, syntax='ios')
-
             prior_sequence_num = int()
-
             for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
                 for child in object.children:  # beginning loop of each sequence number within extended ACL
                     working_sequence_num = int(re.search(r'^\s+\d+', child.text).group(0))
@@ -213,7 +205,7 @@ class NetAutomationTasks:
 
             # performing diff on ACL before and after
 
-            diff_data(command_output_before, command_output_after, node)
+            self.diff_data(command_output_before, command_output_after, node)
 
             # sending write output to user
 
@@ -223,25 +215,24 @@ class NetAutomationTasks:
             print("")
             print("")
 
+    def diff_data(self, data_before, data_after, node):
 
-def diff_data(data_before, data_after, node):
+        """
+        checks pre and post files and builds diff results file. data_before and data_after need to be lists
+        :param data_before:
+        :param data_after:
+        :param node:
+        :return:
+        """
 
-    """
-    checks pre and post files and builds diff results file. data_before and data_after need to be lists
-    :param data_before:
-    :param data_after:
-    :param node:
-    :return:
-    """
+        diff_library = difflib.Differ()
+        diff = diff_library.compare(data_before, data_after)    # data_before and data_after must be lists
 
-    diff_library = difflib.Differ()
-    diff = diff_library.compare(data_before, data_after)    # data_before and data_after must be lists
-
-    print("")
-    print("\t========= CHANGES BELOW {} =========".format(node))
-    print("")
-    print('\n'.join(diff))
-    print("")
+        print("")
+        print("\t========= CHANGES BELOW {} =========".format(node))
+        print("")
+        print('\n'.join(diff))
+        print("")
 
 
 def asa_top_50_top_talkers_bytes(node_connect, asa_node, config_date, config_time, single_host_check):
