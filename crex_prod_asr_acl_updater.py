@@ -30,7 +30,7 @@ def prod_asr_acl_updater():
     # Setting up Connect Handler Object
 
     net_automate = NetAutomationTasks(OS_TYPE, CONFIG_DATE, CONFIG_TIME)  # initiating object Node and passing in variables.
-    net_automate.run_function(net_automate.ios_acl_updater(NODE_LIST, CONFIG_DATE, CONFIG_TIME, SINGLE_HOST_CHECK))  # running function within crexlibs library
+    net_automate.ios_acl_updater(NODE_LIST, CONFIG_DATE, CONFIG_TIME, SINGLE_HOST_CHECK) # running function within crexlibs library
 
 
 
