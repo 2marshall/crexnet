@@ -11,6 +11,7 @@ from crexlibs import NetAutomationTasks
 # 2.
 
 NODE_LIST = ['192.168.40.10', '192.168.40.11']
+NODE_NAMES = ['COX ASR', 'LEVEL3 ASR']
 OS_TYPE = 'cisco_ios'
 
 
@@ -26,7 +27,7 @@ def prod_asr_acl_updater():
     # Setting up Connect Handler Object
 
     net_automate = NetAutomationTasks(OS_TYPE)  # initiating network automation object which provides all needed connection related variable for our devices
-    net_automate.ios_acl_updater(NODE_LIST) # running specific ios_acl_updater
+    net_automate.ios_acl_updater(NODE_LIST, NODE_NAMES)  # running specific ios_acl_updater
 
 
 

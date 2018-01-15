@@ -45,7 +45,7 @@ class NetAutomationTasks:
     # Passing in the run_function method with the name of the function being executed along with unique variables used in functions below.
     # This allows for any call within this class to be executed
 
-    def ios_acl_updater(self, node_list):
+    def ios_acl_updater(self, node_list, node_names):
         """
         Updates outside ACL on Crexendo's Production ASR's
         :return:
@@ -93,9 +93,10 @@ class NetAutomationTasks:
                     print("")
                     break
 
-        for node in node_list:
+        for node, node_name in zip(node_list, node_names):
+
             print("")
-            print("\t========= Working on {} .... =========".format(node))
+            print("\t========= Working on {} .... =========".format(node_name))
             print("")
             self.initiate_connection(node)
             self.connection.enable()
@@ -215,7 +216,7 @@ class NetAutomationTasks:
             print("")
             print("")
 
-    def diff_data(self, data_before, data_after, node):
+    def diff_data(self, data_before, data_after, node_name):
 
         """
         checks pre and post files and builds diff results file. data_before and data_after need to be lists
@@ -229,7 +230,7 @@ class NetAutomationTasks:
         diff = diff_library.compare(data_before, data_after)    # data_before and data_after must be lists
 
         print("")
-        print("\t========= CHANGES BELOW {} =========".format(node))
+        print("\t========= CHANGES BELOW {} =========".format(node_name))
         print("")
         print('\n'.join(diff))
         print("")
