@@ -138,7 +138,7 @@ class NetAutomationTasks:
 
                             for host in denied_hosts:
                                 commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip host {} any'.format(final_sequence_num, host)]
-                                node_connect.send_config_set(commands)
+                                self.connection.send_config_set(commands)
                                 final_sequence_num += SEQUENCE_SKIP
 
                         elif subnets_or_hosts == 'subnets':
@@ -200,16 +200,16 @@ class NetAutomationTasks:
                                     print("MASK NOT CORRECTLY SPECIFICED")
 
                                 commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask)]
-                                node_connect.send_config_set(commands)
+                                self.connection.send_config_set(commands)
                                 final_sequence_num += SEQUENCE_SKIP
 
             # writing config to ASR
 
-            device_write = node_connect.send_command('wr')
+            device_write = self.connection.send_command('wr')
 
             # grabbing post output config and performing DIFF here of command_output before and after
 
-            command_output_after = node_connect.send_command(COMMAND).split('\n')  # sending command to node
+            command_output_after = self.connection.send_command(COMMAND).split('\n')  # sending command to node
 
             # performing diff on ACL before and after
 
