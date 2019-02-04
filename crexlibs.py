@@ -58,7 +58,16 @@ class NetAutomationTasks:
         print("")
         print("\t========= Prod ASR ACL UPDATER =========")
         print("")
-        print("Are you Adding SUBNETS or HOSTS to the ACL?")
+        print("Are you Adding(A) or Removing(R) to the ACL?")
+        add_or_remove_acl = input("A or R >>> ")
+        while add_or_remove_acl.lower() != 'a' and add_or_remove_acl.lower() != 'r':
+            print("Type either A for ADD or R for REMOVE")
+            add_or_remove_acl = input("A or R >>> ")
+        if 'a' in add_or_remove_acl:
+            add_or_remove_acl = 'ADDED'
+        else:
+            add_or_remove_acl = 'REMOVED'
+        print("Are these HOSTS or SUBNETS Being {} the ACL?".format(add_or_remove_acl))
         subnets_or_hosts = input(">>> ")
         print(subnets_or_hosts)
         while subnets_or_hosts.lower() != 'hosts' and subnets_or_hosts.lower() != 'subnets':
