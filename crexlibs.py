@@ -63,11 +63,11 @@ class NetAutomationTasks:
         while add_or_remove_acl.lower() != 'a' and add_or_remove_acl.lower() != 'r':
             print("Type either A for ADD or R for REMOVE")
             add_or_remove_acl = input("A or R >>> ")
-        if 'a' in add_or_remove_acl:
-            add_or_remove_acl = 'ADDED'
+        if 'a' in add_or_remove_acl.lower():
+            add_or_remove_acl = 'ADD'
         else:
-            add_or_remove_acl = 'REMOVED'
-        print("Are these HOSTS or SUBNETS Being {} the ACL?".format(add_or_remove_acl))
+            add_or_remove_acl = 'REMOVE'
+        print("Are these SUBNETS or HOSTS Being {} the ACL?".format(add_or_remove_acl))
         subnets_or_hosts = input(">>> ")
         print(subnets_or_hosts)
         while subnets_or_hosts.lower() != 'hosts' and subnets_or_hosts.lower() != 'subnets':
@@ -83,6 +83,7 @@ class NetAutomationTasks:
                 for host in denied_hosts:
                     if not re.match("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$", host):  # if there is a match and regex works great we pass to go onto the next subnet
                         host_issues = 1
+                        print("One of HOSTS Entered was not in the correct format: {}".format(denied_hosts))
                         break
                 if host_issues == 0:
                     print("")
@@ -113,97 +114,181 @@ class NetAutomationTasks:
             # sending command through ciscoconfparse so we can begin iterating over the seq. numbers
             config_parsed = CiscoConfParse(command_output_before, syntax='ios')
             prior_sequence_num = int()
-            for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
-                for child in object.children:  # beginning loop of each sequence number within extended ACL
-                    working_sequence_num = int(re.search(r'^\s+\d+', child.text).group(0))
+            #  7400 deny ip host 46.166.187.4 any
+            #  7410 deny ip host 185.107.94.42 any
+            #  7420 deny ip host 167.114.65.187 any (10315 matches)
+            #  7430 deny ip host 167.114.64.3 any (10675 matches)
+            #  7450 deny ip host 192.99.100.235 any (10343 matches)
+            #  7460 deny ip host 102.165.38.146 any (65 matches)
+            #  7470 deny ip host 167.114.65.206 any (3380 matches)
+            #  7490 deny ip host 147.135.79.52 any (10425 matches)
+            #  7500 deny ip host 51.75.88.121 any (6250 matches)
+            #  7520 deny ip host 104.222.153.8 any
+            #  7530 deny ip host 216.244.65.106 any (100 matches)
+            #  7540 deny ip host 172.245.249.36 any
+            #  7550 deny ip host 209.126.105.145 any
+            #  7560 deny ip host 75.127.6.10 any
+            #  7570 deny ip host 195.154.173.208 any
+            #  7580 deny ip host 185.217.69.173 any
+            #  7590 deny ip host 147.135.54.83 any
+            #  7600 deny ip host 102.165.33.46 any (18 matches)
+            #  100000 permit ip any any (3160903558 matches)
 
-                    if working_sequence_num != PERMIT_SEQUENCE_NUM:
-
-                        prior_sequence_num = working_sequence_num  # this will track with the working_sequence_num variable so we will be ready to use the prior_sequence_num variable later
-
-                    else:  # if final_sequence_num finally equals PERMIT_SEQUENCE_NUM we have reached the end of the ACL and can find the next seq. number
-
-                        final_sequence_num = prior_sequence_num + SEQUENCE_SKIP  # here we want to take the prior sequence number and add 10. this will give us the next sequence number in the ACL series
-
-                        if final_sequence_num == PERMIT_SEQUENCE_NUM:  # if final_sequence_num is equal to PERMIT_SEQUENCE_NUM we need to increase the PERMIT sequence num because we have reached reached a SEQ which is SEQUENCE_SKIP before PERMIT_SEQUENCE_NUM
-
-                            print("")
-                            print("**** ERROR: PERMIT SEQUENCE NUM REACHED on {}. PLEASE INCREASE PERMIT SEQ NUMBER ****".format(node))
-                            print("")
-
-                            for output_line in command_output_before:
-                                print(output_line)
-
-                            continue
-
-                        elif subnets_or_hosts == 'hosts':
-
-                            for host in denied_hosts:
-                                commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip host {} any'.format(final_sequence_num, host)]
-                                self.connection.send_config_set(commands)
-                                final_sequence_num += SEQUENCE_SKIP
-
-                        elif subnets_or_hosts == 'subnets':
-
-                            for subnet in denied_subnets:
-
-                                subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', subnet)
-
-                                if subnet_and_wildcard_mask.group(2) == '16':
-                                    wildcard_mask = '0.0.255.255'
-
+            # Removing HOSTS/SUBNETS here
+            if add_or_remove_acl.lower() == 'REMOVE':
+                for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
+                    for child in object.children:  # beginning loop of each sequence number within extended ACL
+                        if subnets_or_hosts.lower() == 'hosts':
+                            acl_host_ip = child.text.split()[4] # 7500 deny ip host 51.75.88.121 any
+                            acl_entry = child.text
+                            acl_entry_seq_num = child.text.split()[0]
+                            for denied_host in denied_hosts:
+                                if denied_host == acl_host_ip: # if host is equal to the acl host entry we are on
+                                    print("Host {} ACE Found!!! Do you want to Remove?".format(denied_host))
+                                    print("ACE Entry to Remove : {}".format(acl_entry))
+                                    remove_ace_entry = input("y/n >>> ")
+                                    if 'y' in remove_ace_entry.lower():
+                                        # connect and remove the ACE entry
+                                        commands = ['ip access-list extended OUTSIDE_ACL',
+                                                    'no {}'.format(acl_entry_seq_num)]
+                                        self.connection.send_config_set(commands)
+                        elif subnets_or_hosts.lower() == 'subnets':
+                            acl_subnet = child.text.split()[3] # 6810 deny ip 37.49.224.0 0.0.7.255 any (962 matches)
+                            acl_mask = child.text.split()[4]  # 6810 deny ip 37.49.224.0 0.0.7.255 any (962 matches)
+                            acl_entry = child.text
+                            acl_entry_seq_num = child.text.split()[0]
+                            # convert from wildcard to cidr notation
+                            for denied_subnet in denied_subnets:
+                                subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', acl_mask)
+                                if subnet_and_wildcard_mask.group(2) == '0.0.255.255':
+                                    wildcard_mask = '16'
                                 elif subnet_and_wildcard_mask.group(2) == '17':
                                     wildcard_mask = '0.0.127.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '18':
                                     wildcard_mask = '0.0.63.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '19':
                                     wildcard_mask = '0.0.31.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '20':
                                     wildcard_mask = '0.0.15.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '21':
                                     wildcard_mask = '0.0.7.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '22':
                                     wildcard_mask = '0.0.3.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '23':
                                     wildcard_mask = '0.0.1.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '24':
                                     wildcard_mask = '0.0.0.255'
-
                                 elif subnet_and_wildcard_mask.group(2) == '25':
                                     wildcard_mask = '0.0.0.127'
-
                                 elif subnet_and_wildcard_mask.group(2) == '26':
                                     wildcard_mask = '0.0.0.63'
-
                                 elif subnet_and_wildcard_mask.group(2) == '27':
                                     wildcard_mask = '0.0.0.31'
-
                                 elif subnet_and_wildcard_mask.group(2) == '28':
                                     wildcard_mask = '0.0.0.15'
-
                                 elif subnet_and_wildcard_mask.group(2) == '29':
                                     wildcard_mask = '0.0.0.7'
-
                                 elif subnet_and_wildcard_mask.group(2) == '30':
                                     wildcard_mask = '0.0.0.3'
-
                                 elif subnet_and_wildcard_mask.group(2) == '31':
                                     wildcard_mask = '0.0.0.1'
-
                                 else:
                                     wildcard_mask = None
                                     print("MASK NOT CORRECTLY SPECIFICED")
+                                acl_subnet_plus_mask = '{}/{}'.format(acl_subnet, wildcard_mask)
+                                if denied_subnet == acl_subnet_plus_mask: # if subnet is equal to the acl subnet entry we enter
+                                    print("SUBNET {} ACE Found!!! Do you want to Remove?".format(denied_subnet))
+                                    print("ACE Entry to Remove : {}".format(acl_entry))
+                                    remove_ace_entry = input("y/n >>> ")
+                                    if 'y' in remove_ace_entry.lower():
+                                        # connect and remove the ACE entry
+                                        commands = ['ip access-list extended OUTSIDE_ACL',
+                                                    'no {}'.format(acl_entry_seq_num)]
+                                        self.connection.send_config_set(commands)
 
-                                commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask)]
-                                self.connection.send_config_set(commands)
-                                final_sequence_num += SEQUENCE_SKIP
+            if add_or_remove_acl.lower() == 'ADD':
+                # Adding HOSTS/SUBNETS here
+                for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
+                    for child in object.children:  # beginning loop of each sequence number within extended ACL
+                        working_sequence_num = int(re.search(r'^\s+\d+', child.text).group(0)) # assigned to the sequence number in loop 7590 deny ip host 147.135.54.83 any
+                        if working_sequence_num != PERMIT_SEQUENCE_NUM:
+                            prior_sequence_num = working_sequence_num  # this will track with the working_sequence_num variable so we will be ready to use the prior_sequence_num variable later
+                        else:  # if working_sequence_num finally equals PERMIT_SEQUENCE_NUM we have reached the end of the ACL and can find the next seq. number
+                            final_sequence_num = prior_sequence_num + SEQUENCE_SKIP  # here we want to take the prior sequence number and add 10. this will give us the next sequence number in the ACL series
+                            if final_sequence_num == PERMIT_SEQUENCE_NUM:  # if final_sequence_num is equal to PERMIT_SEQUENCE_NUM we need to increase the PERMIT sequence num because we have reached reached a SEQ which is SEQUENCE_SKIP before PERMIT_SEQUENCE_NUM
+                                print("")
+                                print("**** ERROR: PERMIT SEQUENCE NUM REACHED on {}. PLEASE INCREASE PERMIT SEQ NUMBER ****".format(node))
+                                print("")
+                                for output_line in command_output_before:
+                                    print(output_line)
+                                continue
+                            elif subnets_or_hosts == 'hosts':
+                                # Add/Remove host entries to ACL Here
+                                for host in denied_hosts:
+                                    commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip host {} any'.format(final_sequence_num, host)]
+                                    self.connection.send_config_set(commands)
+                                    final_sequence_num += SEQUENCE_SKIP
+                            elif subnets_or_hosts == 'subnets':
+
+                                for subnet in denied_subnets:
+
+                                    subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', subnet)
+
+                                    if subnet_and_wildcard_mask.group(2) == '16':
+                                        wildcard_mask = '0.0.255.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '17':
+                                        wildcard_mask = '0.0.127.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '18':
+                                        wildcard_mask = '0.0.63.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '19':
+                                        wildcard_mask = '0.0.31.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '20':
+                                        wildcard_mask = '0.0.15.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '21':
+                                        wildcard_mask = '0.0.7.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '22':
+                                        wildcard_mask = '0.0.3.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '23':
+                                        wildcard_mask = '0.0.1.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '24':
+                                        wildcard_mask = '0.0.0.255'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '25':
+                                        wildcard_mask = '0.0.0.127'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '26':
+                                        wildcard_mask = '0.0.0.63'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '27':
+                                        wildcard_mask = '0.0.0.31'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '28':
+                                        wildcard_mask = '0.0.0.15'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '29':
+                                        wildcard_mask = '0.0.0.7'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '30':
+                                        wildcard_mask = '0.0.0.3'
+
+                                    elif subnet_and_wildcard_mask.group(2) == '31':
+                                        wildcard_mask = '0.0.0.1'
+
+                                    else:
+                                        wildcard_mask = None
+                                        print("MASK NOT CORRECTLY SPECIFICED")
+
+                                    commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask)]
+                                    self.connection.send_config_set(commands)
+                                    final_sequence_num += SEQUENCE_SKIP
 
             # writing config to ASR
 
