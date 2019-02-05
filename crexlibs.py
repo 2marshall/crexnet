@@ -4,7 +4,6 @@ import difflib
 import subprocess
 import re
 from ciscoconfparse import CiscoConfParse
-import pdb
 
 
 class NetAutomationTasks:
@@ -23,11 +22,15 @@ class NetAutomationTasks:
 
     def __init__(self, os_type):
 
-        self.username = input('Username: ')
-        self.password = getpass.getpass('Password: ')
-        self.enable_pass = getpass.getpass('Enable Password: ')
+        self.username = None
+        self.password = None
+        self.enable_pass = None
         self.os_type = os_type
         self.connection = None
+        self.working_username = None
+        self.working_password = None
+        self.working_enable_pass = None
+        self.bypass_username_pass_check = False
 
     def initiate_connection(self, node):
         node_data = {
@@ -56,7 +59,6 @@ class NetAutomationTasks:
         SEQUENCE_SKIP = 10
         COMMAND = 'show access-list OUTSIDE_ACL'
 
-        pdb.set_trace()
         print("")
         print("\t========= Prod ASR ACL UPDATER =========")
         print("")
@@ -66,12 +68,11 @@ class NetAutomationTasks:
             print("Type either A for ADD or R for REMOVE")
             add_or_remove_acl = input("A or R >>> ")
         if 'a' in add_or_remove_acl.lower():
-            add_or_remove_acl = 'ADD'
+            add_or_remove_acl = 'add'
         else:
-            add_or_remove_acl = 'REMOVE'
+            add_or_remove_acl = 'remove'
         print("Are these SUBNETS or HOSTS Being {} the ACL?".format(add_or_remove_acl))
         subnets_or_hosts = input(">>> ")
-        print(subnets_or_hosts)
         while subnets_or_hosts.lower() != 'hosts' and subnets_or_hosts.lower() != 'subnets':
             print("Type either SUBNETS or HOSTS")
             subnets_or_hosts = input(">>> ")
@@ -98,7 +99,7 @@ class NetAutomationTasks:
                 print("Enter each subnet in CIDR Notation with a Space after each: 185.16.0.0/16 56.16.101.0/24 98.103.104.128/25")
                 denied_subnets = input('>>> ').split()
                 for subnet in denied_subnets:
-                    if not re.match("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/\d+$", subnet):  # if there is a match and regex works great we pass to go onto the next subnet
+                    if not re.match("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/\d{1,2}$", subnet):  # if there is a match and regex works great we pass to go onto the next subnet
                         subnet_issues = 1
                         print("One of SUBNETS Entered was not in the correct format: {}".format(subnet))
                         break
@@ -107,12 +108,28 @@ class NetAutomationTasks:
                     break
 
         for node, node_name in zip(node_list, node_names):
-
+            if not self.bypass_username_pass_check:
+                self.username = input('Username: ')
+                self.password = getpass.getpass('Password: ')
+                self.enable_pass = getpass.getpass('Enable Password: ')
+                while True:
+                    try:
+                        self.initiate_connection(node)
+                        self.connection.enable()
+                        self.bypass_username_pass_check = True
+                        break
+                    except Exception as err:
+                        if 'enable mode' in str(err):
+                            self.enable_pass = getpass.getpass('Enable Password Wrong Try Again: ')
+                        elif 'Authentication failure' in str(err):
+                            self.password = getpass.getpass('Password Wrong Try Again: ')
+                        pass
+            else:
+                self.initiate_connection(node)
+                self.connection.enable()
             print("")
             print("\t========= Working on {} .... =========".format(node_name))
             print("")
-            self.initiate_connection(node)
-            self.connection.enable()
             command_output_before = self.connection.send_command(COMMAND).split('\n')  # sending command to node
             # sending command through ciscoconfparse so we can begin iterating over the seq. numbers
             config_parsed = CiscoConfParse(command_output_before, syntax='ios')
@@ -137,13 +154,17 @@ class NetAutomationTasks:
             #  7600 deny ip host 102.165.33.46 any (18 matches)
             #  100000 permit ip any any (3160903558 matches)
 
+            #  62.138.7.200
+            #  188.138.33.79
+            #  -     6840 deny ip 185.53.91.0 0.0.0.255 any (1034 matches)
+
             # Removing HOSTS/SUBNETS here
-            if add_or_remove_acl.lower() == 'REMOVE':
+            if add_or_remove_acl.lower() == 'remove':
                 for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
                     for child in object.children:  # beginning loop of each sequence number within extended ACL
                         if subnets_or_hosts.lower() == 'hosts':
                             acl_host_ip = child.text.split()[4] # 7500 deny ip host 51.75.88.121 any
-                            acl_entry = child.text
+                            acl_entry = child.text.strip()
                             acl_entry_seq_num = child.text.split()[0]
                             for denied_host in denied_hosts:
                                 if denied_host == acl_host_ip: # if host is equal to the acl host entry we are on
@@ -156,50 +177,52 @@ class NetAutomationTasks:
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
                         elif subnets_or_hosts.lower() == 'subnets':
+                            if 'host' in child.text.split()[3] or 'any' in child.text.split()[3]:
+                                continue
                             acl_subnet = child.text.split()[3] # 6810 deny ip 37.49.224.0 0.0.7.255 any (962 matches)
-                            acl_mask = child.text.split()[4]  # 6810 deny ip 37.49.224.0 0.0.7.255 any (962 matches)
-                            acl_entry = child.text
+                            wildcard_mask = child.text.split()[4]  # 6810 deny ip 37.49.224.0 0.0.7.255 any (962 matches)
+                            acl_entry = child.text.strip()
                             acl_entry_seq_num = child.text.split()[0]
                             # convert from wildcard to cidr notation
                             for denied_subnet in denied_subnets:
-                                subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', acl_mask)
-                                if subnet_and_wildcard_mask.group(2) == '0.0.255.255':
-                                    wildcard_mask = '16'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.127.255':
-                                    wildcard_mask = '17'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.63.255':
-                                    wildcard_mask = '18'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.31.255':
-                                    wildcard_mask = '19'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.15.255':
-                                    wildcard_mask = '20'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.7.255':
-                                    wildcard_mask = '21'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.3.255':
-                                    wildcard_mask = '22'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.1.255':
-                                    wildcard_mask = '23'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.255':
-                                    wildcard_mask = '24'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.127':
-                                    wildcard_mask = '25'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.63':
+                                # subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', acl_mask)
+                                if wildcard_mask == '0.0.255.255':
+                                    cidr_mask = '16'
+                                elif wildcard_mask == '0.0.127.255':
+                                    cidr_mask = '17'
+                                elif wildcard_mask == '0.0.63.255':
+                                    cidr_mask = '18'
+                                elif wildcard_mask == '0.0.31.255':
+                                    cidr_mask = '19'
+                                elif wildcard_mask == '0.0.15.255':
+                                    cidr_mask = '20'
+                                elif wildcard_mask == '0.0.7.255':
+                                    cidr_mask = '21'
+                                elif wildcard_mask == '0.0.3.255':
+                                    cidr_mask = '22'
+                                elif wildcard_mask == '0.0.1.255':
+                                    cidr_mask = '23'
+                                elif wildcard_mask == '0.0.0.255':
+                                    cidr_mask = '24'
+                                elif wildcard_mask == '0.0.0.127':
+                                    cidr_mask = '25'
+                                elif wildcard_mask == '0.0.0.63':
                                     wildcard_mask = '26'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.31':
+                                elif wildcard_mask == '0.0.0.31':
                                     wildcard_mask = '27'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.15':
+                                elif wildcard_mask == '0.0.0.15':
                                     wildcard_mask = '28'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.7':
+                                elif wildcard_mask == '0.0.0.7':
                                     wildcard_mask = '29'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.3':
+                                elif wildcard_mask == '0.0.0.3':
                                     wildcard_mask = '30'
-                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.1':
+                                elif wildcard_mask == '0.0.0.1':
                                     wildcard_mask = '31'
                                 else:
                                     wildcard_mask = None
-                                    print("WILDCARD MASK TO CIDR CONVERSION FAILED {}".format(acl_entry))
+                                    print("WILDCARD MASK TO CIDR CONVERSION FAILED. NO MATCH FOUND:  {}".format(acl_entry))
                                     exit(0)
-                                acl_subnet_plus_mask = '{}/{}'.format(acl_subnet, wildcard_mask)
+                                acl_subnet_plus_mask = '{}/{}'.format(acl_subnet, cidr_mask)
                                 if denied_subnet == acl_subnet_plus_mask: # if subnet is equal to the acl subnet entry we enter
                                     print("SUBNET {} ACE Found!!! Do you want to Remove?".format(denied_subnet))
                                     print("ACE Entry to Remove : {}".format(acl_entry))
@@ -209,7 +232,7 @@ class NetAutomationTasks:
                                         commands = ['ip access-list extended OUTSIDE_ACL',
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
-            if add_or_remove_acl.lower() == 'ADD':
+            if add_or_remove_acl.lower() == 'add':
                 # Adding HOSTS/SUBNETS here
                 for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
                     for child in object.children:  # beginning loop of each sequence number within extended ACL
@@ -232,7 +255,8 @@ class NetAutomationTasks:
                                     self.connection.send_config_set(commands)
                                     final_sequence_num += SEQUENCE_SKIP
                             elif subnets_or_hosts == 'subnets':
-
+                                if 'host' in child.text.split()[3]:
+                                    continue
                                 for subnet in denied_subnets:
 
                                     subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', subnet)
