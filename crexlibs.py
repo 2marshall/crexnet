@@ -4,6 +4,7 @@ import difflib
 import subprocess
 import re
 from ciscoconfparse import CiscoConfParse
+import pdb
 
 
 class NetAutomationTasks:
@@ -55,6 +56,7 @@ class NetAutomationTasks:
         SEQUENCE_SKIP = 10
         COMMAND = 'show access-list OUTSIDE_ACL'
 
+        pdb.set_trace()
         print("")
         print("\t========= Prod ASR ACL UPDATER =========")
         print("")
@@ -83,7 +85,7 @@ class NetAutomationTasks:
                 for host in denied_hosts:
                     if not re.match("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$", host):  # if there is a match and regex works great we pass to go onto the next subnet
                         host_issues = 1
-                        print("One of HOSTS Entered was not in the correct format: {}".format(denied_hosts))
+                        print("One of HOSTS Entered was not in the correct format: {}".format(host))
                         break
                 if host_issues == 0:
                     print("")
@@ -98,6 +100,7 @@ class NetAutomationTasks:
                 for subnet in denied_subnets:
                     if not re.match("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/\d+$", subnet):  # if there is a match and regex works great we pass to go onto the next subnet
                         subnet_issues = 1
+                        print("One of SUBNETS Entered was not in the correct format: {}".format(subnet))
                         break
                 if subnet_issues == 0:
                     print("")
@@ -162,39 +165,40 @@ class NetAutomationTasks:
                                 subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', acl_mask)
                                 if subnet_and_wildcard_mask.group(2) == '0.0.255.255':
                                     wildcard_mask = '16'
-                                elif subnet_and_wildcard_mask.group(2) == '17':
-                                    wildcard_mask = '0.0.127.255'
-                                elif subnet_and_wildcard_mask.group(2) == '18':
-                                    wildcard_mask = '0.0.63.255'
-                                elif subnet_and_wildcard_mask.group(2) == '19':
-                                    wildcard_mask = '0.0.31.255'
-                                elif subnet_and_wildcard_mask.group(2) == '20':
-                                    wildcard_mask = '0.0.15.255'
-                                elif subnet_and_wildcard_mask.group(2) == '21':
-                                    wildcard_mask = '0.0.7.255'
-                                elif subnet_and_wildcard_mask.group(2) == '22':
-                                    wildcard_mask = '0.0.3.255'
-                                elif subnet_and_wildcard_mask.group(2) == '23':
-                                    wildcard_mask = '0.0.1.255'
-                                elif subnet_and_wildcard_mask.group(2) == '24':
-                                    wildcard_mask = '0.0.0.255'
-                                elif subnet_and_wildcard_mask.group(2) == '25':
-                                    wildcard_mask = '0.0.0.127'
-                                elif subnet_and_wildcard_mask.group(2) == '26':
-                                    wildcard_mask = '0.0.0.63'
-                                elif subnet_and_wildcard_mask.group(2) == '27':
-                                    wildcard_mask = '0.0.0.31'
-                                elif subnet_and_wildcard_mask.group(2) == '28':
-                                    wildcard_mask = '0.0.0.15'
-                                elif subnet_and_wildcard_mask.group(2) == '29':
-                                    wildcard_mask = '0.0.0.7'
-                                elif subnet_and_wildcard_mask.group(2) == '30':
-                                    wildcard_mask = '0.0.0.3'
-                                elif subnet_and_wildcard_mask.group(2) == '31':
-                                    wildcard_mask = '0.0.0.1'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.127.255':
+                                    wildcard_mask = '17'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.63.255':
+                                    wildcard_mask = '18'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.31.255':
+                                    wildcard_mask = '19'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.15.255':
+                                    wildcard_mask = '20'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.7.255':
+                                    wildcard_mask = '21'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.3.255':
+                                    wildcard_mask = '22'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.1.255':
+                                    wildcard_mask = '23'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.255':
+                                    wildcard_mask = '24'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.127':
+                                    wildcard_mask = '25'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.63':
+                                    wildcard_mask = '26'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.31':
+                                    wildcard_mask = '27'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.15':
+                                    wildcard_mask = '28'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.7':
+                                    wildcard_mask = '29'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.3':
+                                    wildcard_mask = '30'
+                                elif subnet_and_wildcard_mask.group(2) == '0.0.0.1':
+                                    wildcard_mask = '31'
                                 else:
                                     wildcard_mask = None
-                                    print("MASK NOT CORRECTLY SPECIFICED")
+                                    print("WILDCARD MASK TO CIDR CONVERSION FAILED {}".format(acl_entry))
+                                    exit(0)
                                 acl_subnet_plus_mask = '{}/{}'.format(acl_subnet, wildcard_mask)
                                 if denied_subnet == acl_subnet_plus_mask: # if subnet is equal to the acl subnet entry we enter
                                     print("SUBNET {} ACE Found!!! Do you want to Remove?".format(denied_subnet))
@@ -205,7 +209,6 @@ class NetAutomationTasks:
                                         commands = ['ip access-list extended OUTSIDE_ACL',
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
-
             if add_or_remove_acl.lower() == 'ADD':
                 # Adding HOSTS/SUBNETS here
                 for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
