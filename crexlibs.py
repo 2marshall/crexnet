@@ -31,6 +31,9 @@ class NetAutomationTasks:
         self.working_password = None
         self.working_enable_pass = None
         self.bypass_username_pass_check = False
+        self.final_ace_list = None
+        self.existing_ace_list = None
+        self.added_removed_aces = None
 
     def initiate_connection(self, node):
         node_data = {
@@ -107,7 +110,11 @@ class NetAutomationTasks:
                     print("")
                     break
 
+        # Initiate Connection to devices
         for node, node_name in zip(node_list, node_names):
+            self.final_ace_list = list()
+            self.existing_ace_list = list()
+            self.added_removed_aces = list()
             if not self.bypass_username_pass_check:
                 self.username = input('Username: ')
                 self.password = getpass.getpass('Password: ')
@@ -157,7 +164,23 @@ class NetAutomationTasks:
             #  62.138.7.200
             #  188.138.33.79
             #  -     6840 deny ip 185.53.91.0 0.0.0.255 any (1034 matches)
-
+            if subnets_or_hosts.lower() == 'hosts':
+                for line in command_output_before:
+                    for host in denied_hosts:
+                        if host in line:
+                            self.existing_ace_list.append(host)
+                # Compare existing_ace_list to denied_hosts and apply to final ace list we send to devices
+                self.final_ace_list = set(denied_hosts) - set(self.existing_ace_list)
+            elif subnets_or_hosts.lower() == 'subnets':
+                for line in command_output_before:
+                    for subnet in denied_subnets:
+                        subnet = subnet.split('/')[0]
+                        if subnet in line:
+                            self.existing_ace_list.append(subnet)
+                # Compare existing_ace_list to denied_hosts and apply to final ace list we send to devices
+                self.final_ace_list = set(denied_subnets) - set(self.existing_ace_list)
+            # If final_ace_list contains no new host entries continue to next node and spit out message to user
+            # Find the differences from the
             # Removing HOSTS/SUBNETS here
             if add_or_remove_acl.lower() == 'remove':
                 for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
@@ -176,6 +199,7 @@ class NetAutomationTasks:
                                         commands = ['ip access-list extended OUTSIDE_ACL',
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
+                                        self.added_removed_aces.append(acl_entry)
                         elif subnets_or_hosts.lower() == 'subnets':
                             if 'host' in child.text.split()[3] or 'any' in child.text.split()[3]:
                                 continue
@@ -233,6 +257,13 @@ class NetAutomationTasks:
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
             if add_or_remove_acl.lower() == 'add':
+                if not self.final_ace_list:
+                    if subnets_or_hosts.lower() == 'hosts':
+                        print("All {} ACE's Found in ACL - NO Changes to Make".format(subnets_or_hosts))
+                        continue
+                    elif subnets_or_hosts.lower() == 'subnets':
+                        print("All {} ACE's Found in ACL - NO Changes to Make".format(subnets_or_hosts))
+                        continue
                 # Adding HOSTS/SUBNETS here
                 for object in config_parsed.find_objects(r'^Extended'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
                     for child in object.children:  # beginning loop of each sequence number within extended ACL
@@ -250,14 +281,15 @@ class NetAutomationTasks:
                                 continue
                             elif subnets_or_hosts == 'hosts':
                                 # Add/Remove host entries to ACL Here
-                                for host in denied_hosts:
+                                for host in self.final_ace_list:
                                     commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip host {} any'.format(final_sequence_num, host)]
                                     self.connection.send_config_set(commands)
                                     final_sequence_num += SEQUENCE_SKIP
+                                    self.added_removed_aces.append('{} deny ip host {} any'.format(final_sequence_num, host))
                             elif subnets_or_hosts == 'subnets':
                                 if 'host' in child.text.split()[3]:
                                     continue
-                                for subnet in denied_subnets:
+                                for subnet in self.final_ace_list:
 
                                     subnet_and_wildcard_mask = re.search(r'(.*(?=\/))\/(\d+)', subnet)
 
@@ -334,6 +366,23 @@ class NetAutomationTasks:
             print("\t========= CHANGE WRITE EVIDENCE {} =========".format(node))
             print("")
             print(device_write)
+            print("")
+            print("")
+            if add_or_remove_acl.lower() == 'add':
+                # Tell user which hosts/subnets were added and which were not
+                print("=== List of {} which found existing match in ACL so NOT Added to ACL".format(subnets_or_hosts))
+                if self.existing_ace_list:
+                    for line in self.existing_ace_list:
+                        print(line)
+                else:
+                    print('NONE')
+                print("")
+            print("=== List of {} which were {} to ACL".format(subnets_or_hosts, add_or_remove_acl))
+            if self.added_removed_aces:
+                for line in self.added_removed_aces:
+                    print(line)
+            else:
+                print('NONE')
             print("")
             print("")
 
