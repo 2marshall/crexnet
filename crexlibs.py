@@ -106,7 +106,7 @@ class NetAutomationTasks:
                         subnet_issues = 1
                         print("One of SUBNETS Entered was not in the correct format: {}".format(subnet))
                         break
-                if subnet_issues == 0:
+                if subnet_issues == 0:  # if all subnets are accurately typed break out of loop and move forward
                     print("")
                     break
 
@@ -256,6 +256,7 @@ class NetAutomationTasks:
                                         commands = ['ip access-list extended OUTSIDE_ACL',
                                                     'no {}'.format(acl_entry_seq_num)]
                                         self.connection.send_config_set(commands)
+                                        self.added_removed_aces.append(acl_entry)
             if add_or_remove_acl.lower() == 'add':
                 if not self.final_ace_list:
                     if subnets_or_hosts.lower() == 'hosts':
@@ -348,6 +349,7 @@ class NetAutomationTasks:
                                     commands = ['ip access-list extended OUTSIDE_ACL', '{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask)]
                                     self.connection.send_config_set(commands)
                                     final_sequence_num += SEQUENCE_SKIP
+                                    self.added_removed_aces.append('{} deny ip {} {} any'.format(final_sequence_num, subnet_and_wildcard_mask.group(1), wildcard_mask))
 
             # writing config to ASR
 
