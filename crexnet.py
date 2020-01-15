@@ -1,17 +1,12 @@
 #!/bin/python3
 
 import crex_prod_asr_acl_updater
-import crex_prod_asa_top_talkers
-import crex_corp_asa_top_talkers
-import crex_prod_asa_top_embryonic_conns
-import crex_corp_asa_top_embryonic_conns
+import crex_asa_top_talkers
 
 print("")
 print("")
 print("\t\t============== Crexendo Python Network Automation Tasks ==============")
 print("")
-print("")
-print("\t======= Production Automation Tasks")
 print("")
 print("{:<} {:.^45} {:>}".format("\tProd ASR OUTSIDE_ACL Updater", ".", "1"))
 print("")
@@ -21,7 +16,7 @@ print("")
 # print("")
 # print("\t======= Corporate Automation Tasks")
 # print("")
-# print("{:<} {:.^41} {:>}".format("\tCorp ASA 50 Top Talkers by Bytes", ".", "4"))
+print("{:<} {:.^41} {:>}".format("\tASA 50 Top Talkers by Bytes", ".", "2"))
 # print("{:<} {:.^13} {:>}".format("\tCorp ASA Hosts w/Over 100 Half-Open Connections (SYN Attack)", ".", "5"))
 # print("")
 
@@ -36,20 +31,20 @@ if menu_decision.lower() == '1':
 
     crex_prod_asr_acl_updater.prod_asr_acl_updater()
 
+# elif menu_decision.lower() == '2':
+#
+#     crex_prod_asa_top_talkers.prod_asa_top_talkers_bytes()
+#
+# elif menu_decision.lower() == '3':
+#
+#     crex_prod_asa_top_embryonic_conns.prod_asa_top_embryonic_conns()
+
 elif menu_decision.lower() == '2':
 
-    crex_prod_asa_top_talkers.prod_asa_top_talkers_bytes()
+    crex_asa_top_talkers.asa_top_talkers_bytes()
 
-elif menu_decision.lower() == '3':
-
-    crex_prod_asa_top_embryonic_conns.prod_asa_top_embryonic_conns()
-
-elif menu_decision.lower() == '4':
-
-    crex_corp_asa_top_talkers.corp_asa_top_talkers_bytes()
-
-elif menu_decision.lower() == '5':
-
-    crex_corp_asa_top_embryonic_conns.corp_asa_top_embryonic_conns()
+# elif menu_decision.lower() == '5':
+#
+#     crex_corp_asa_top_embryonic_conns.corp_asa_top_embryonic_conns()
 
 

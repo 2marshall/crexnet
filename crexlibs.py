@@ -3,7 +3,18 @@ from netmiko import ConnectHandler
 import difflib
 import subprocess
 import re
+import math
 from ciscoconfparse import CiscoConfParse
+
+
+def convert_size(size_bytes):
+    if size_bytes == 0:
+        return "0B"
+    size_name = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
+    i = int(math.floor(math.log(size_bytes, 1024)))
+    power = math.pow(1024, i)
+    size = round(size_bytes / power, 2)
+    return "{} {}".format(size, size_name[i])
 
 
 class NetAutomationTasks:
@@ -407,134 +418,113 @@ class NetAutomationTasks:
         print('\n'.join(diff))
         print("")
 
+    def asa_top_50_top_talkers_bytes(self, node_list, config_date, config_time):
 
-def asa_top_50_top_talkers_bytes(node_connect, asa_node, config_date, config_time, single_host_check):
+        """
+        This provides you with the top 50 hosts who have consumed the most data through the ASA
+        :param node_list:
+        :param config_date:
+        :param config_time:
+        :return:
+        """
 
-    """
-    This provides you with the top 50 hosts who have consumed the most data through the ASA
-    :param asa_node:
-    :param config_date:
-    :param config_time:
-    :param node_connect:
-    :param single_host_check:
-    :return:
-    """
+        # show conn - save to local file
+        # grab output and sort by top 50 hosts
+        # cat /tmp/ASA_show_conn_ouput  |awk '{print $9, $1, $3, $5}' |sort -nr | head -50
 
-    # show conn - save to local file
-    # grab output and sort by top 50 hosts
-    # cat /tmp/ASA_show_conn_ouput  |awk '{print $9, $1, $3, $5}' |sort -nr | head -50
-
-    if single_host_check:
-
+        self.username = input('Username: ')
+        self.password = getpass.getpass('Password: ')
+        self.enable_pass = getpass.getpass('Enable Password: ')
+        self.initiate_connection(node_list)
+        self.connection.enable()
         print("")
         print("")
-        print("\t========= {} Top 50 Top-Talkers by Bytes =========".format(single_host_check))
-        print("")
-        print("")
-
-        filename = ('sh-conn-{}-{}-{}.log'.format(single_host_check, config_date, config_time))
-        host_connections_output = node_connect.send_command_timing('sh conn address {}'.format(single_host_check), delay_factor=3)
-        with open('asa_top_talkers_logs/{}'.format(filename), 'w') as file:
-            file.write(host_connections_output)
-
-    else:
-
-        print("")
-        print("")
-        print("\t========= {} Top 50 Top-Talkers by Bytes =========".format(asa_node))
+        print("\t========= {} Top 25 Top-Talkers by Bytes =========".format(node_list))
         print("")
         print("")
         print("\tPreparing Output.......")
         print("")
-
-        filename = ('sh-conn-{}-{}-{}.log'.format(asa_node, config_date, config_time))
-        host_connections_output = node_connect.send_command_timing('sh conn', delay_factor=4)
+        filename = ('sh-conn-{}-{}-{}.log'.format(node_list, config_date, config_time))
+        host_connections_output = self.connection.send_command_timing('sh conn', delay_factor=4)
         with open('asa_top_talkers_logs/{}'.format(filename), 'w') as file:
             file.write(host_connections_output)
 
-    # outputting the top 50 host connections by byte count on the prod asa
+        # outputting the top 50 host connections by byte count on the prod asa
 
-    top_50_talkers = subprocess.check_output(["cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | tail -n +1 | head -50" % filename], shell=True, stderr=subprocess.STDOUT).decode('utf-8').split('\n')
+        top_50_talkers = subprocess.check_output(["cat asa_top_talkers_logs/%s | awk '{print $9, $1, $3, $5}' | sort -nr | tail -n +1 | head -25" % filename], shell=True, stderr=subprocess.STDOUT).decode('utf-8').split('\n')
 
-    # iterating over each host and converting bytes to MB
+        # iterating over each host and converting bytes to MB
 
-    for host in top_50_talkers:
-
-        try:
-
-            host_total_bytes = int(re.search(r'^\d+', host).group(0))
-            host_connection_output = re.search(r'(?<=,\s).+', host).group(0)
-            host_bytes_to_kbytes = int(host_total_bytes / 1024)
-            host_kbytes_to_mbytes_str = str(int(host_bytes_to_kbytes / 1024))
-            host_kbytes_to_mbytes_int = host_bytes_to_kbytes / 1024
-
+        for host in top_50_talkers:
+            try:
+                host_traffic_total = convert_size(int(host.split()[0].replace(',', '')))
+                host1_connection_output = host.split()[2]
+                host2_connection_output = host.split()[3].replace(',', '')
+                print("{} {} {}".format(host_traffic_total, host1_connection_output, host2_connection_output))
+            except Exception:
+                pass
             # If the host has accumulated more than 50MB of data perform nslookup because this is most likely our culprit.
 
-            if single_host_check:
+            # if single_host_check:
+            #
+            #     if host_kbytes_to_mbytes_int >= 1:
+            #
+            #         trouble_ip = re.search(r'(?<=[U,T][D,C]P\s).*(?=:\d{5})', host_connection_output).group(0)
+            #         nslookup_trouble_ip = subprocess.check_output(["nslookup %s" % trouble_ip], shell=True, stderr=subprocess.STDOUT).decode('utf-8')
+            #         nslookup_trouble_ip_parse = re.search(r'(?<=Non-authoritative answer:\n).*(?=\n)', nslookup_trouble_ip).group(0)
+            #         print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
+            #         print("")
+            #         print("NSLOOKUP on {} = {}".format(trouble_ip, nslookup_trouble_ip_parse))
+            #         print("")
 
-                if host_kbytes_to_mbytes_int >= 1:
-
-                    trouble_ip = re.search(r'(?<=[U,T][D,C]P\s).*(?=:\d{5})', host_connection_output).group(0)
-                    nslookup_trouble_ip = subprocess.check_output(["nslookup %s" % trouble_ip], shell=True, stderr=subprocess.STDOUT).decode('utf-8')
-                    nslookup_trouble_ip_parse = re.search(r'(?<=Non-authoritative answer:\n).*(?=\n)', nslookup_trouble_ip).group(0)
-                    print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
-                    print("")
-                    print("NSLOOKUP on {} = {}".format(trouble_ip, nslookup_trouble_ip_parse))
-                    print("")
-
-                else:
-
-                    print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
-
-            else:
-
-                print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
-
-        except:
-
-            print("")
-            print("")
-            subprocess.call(["rm -rvf asa_top_talkers_logs/%s" % filename], shell=True)
-            print("")
-            print("")
-
-    return
-
-
-def asa_top_50_host_embryonic_conns(node_connect, asa_node, config_date, config_time, single_host_check):
-
-    embryonic_host_found = False
-
-    host_embryonic_conn_output = node_connect.send_command('show local-host | in host|embryonic').split('\n')
-    config_parsed = CiscoConfParse(host_embryonic_conn_output, syntax='ios')
-
-    for parent in config_parsed.find_objects(r'^local'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
-
-        # Grab Host IP from Object
-
-        host_ip = re.search(r'(?<=<).*(?=>)', parent.text).group(0)
-
-        for child in parent.children:
-            # Grab Total Host Embryonic Connections
-
-            embryonic_conn_count = int(re.search(r'(?<=\s=\s).*', child.text).group(0))
-
-        # perform If statement on embryonic connection count so we only display hosts with more than 100 half open connections
-
-        if embryonic_conn_count >= 100:
-
-            embryonic_host_found = True
-
-            print("Host IP: {} Half-Open Connections: {}".format(host_ip, embryonic_conn_count))
-
-            asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, host_ip, single_host_check=host_ip)
-
-    if not embryonic_host_found:
-
+            #     else:
+            #
+            #         print("{} MB {}".format(host_kbytes_to_mbytes_str, host_connection_output))
+            #
         print("")
-        print("\t *** GOOD NEWS NO HOSTS W/OVER 100 HALF-OPEN CONNECTIONS ***")
+        print("--- removing asa conn logs")
+        print("")
+        print("")
+        subprocess.call(["rm -rvf asa_top_talkers_logs/%s" % filename], shell=True)
+        print("")
         print("")
 
-    return
+        return
+
+    # def asa_top_50_host_embryonic_conns(node_connect, asa_node, config_date, config_time, single_host_check):
+    #
+    #     embryonic_host_found = False
+    #
+    #     host_embryonic_conn_output = node_connect.send_command('show local-host | in host|embryonic').split('\n')
+    #     config_parsed = CiscoConfParse(host_embryonic_conn_output, syntax='ios')
+    #
+    #     for parent in config_parsed.find_objects(r'^local'):  # Finding objects beginning with Extended and begin parsing children. there is only one because we were specific on the access-list being displayed
+    #
+    #         # Grab Host IP from Object
+    #
+    #         host_ip = re.search(r'(?<=<).*(?=>)', parent.text).group(0)
+    #
+    #         for child in parent.children:
+    #             # Grab Total Host Embryonic Connections
+    #
+    #             embryonic_conn_count = int(re.search(r'(?<=\s=\s).*', child.text).group(0))
+    #
+    #         # perform If statement on embryonic connection count so we only display hosts with more than 100 half open connections
+    #
+    #         if embryonic_conn_count >= 100:
+    #
+    #             embryonic_host_found = True
+    #
+    #             print("Host IP: {} Half-Open Connections: {}".format(host_ip, embryonic_conn_count))
+    #
+    #             asa_top_50_top_talkers_bytes(node_connect, config_date, config_time, host_ip, single_host_check=host_ip)
+    #
+    #     if not embryonic_host_found:
+    #
+    #         print("")
+    #         print("\t *** GOOD NEWS NO HOSTS W/OVER 100 HALF-OPEN CONNECTIONS ***")
+    #         print("")
+    #
+    #     return
 
 
