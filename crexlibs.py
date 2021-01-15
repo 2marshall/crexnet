@@ -178,7 +178,7 @@ class NetAutomationTasks:
             if subnets_or_hosts.lower() == 'hosts':
                 for line in command_output_before:
                     for host in denied_hosts:
-                        if host in line:
+                        if host == line.split()[4]:
                             self.existing_ace_list.append(host)
                 # Compare existing_ace_list to denied_hosts and apply to final ace list we send to devices
                 self.final_ace_list = set(denied_hosts) - set(self.existing_ace_list)
@@ -186,7 +186,7 @@ class NetAutomationTasks:
                 for line in command_output_before:
                     for subnet in denied_subnets:
                         subnet = subnet.split('/')[0]
-                        if subnet in line:
+                        if subnet == line.split()[3]:
                             self.existing_ace_list.append(subnet)
                 # Compare existing_ace_list to denied_hosts and apply to final ace list we send to devices
                 self.final_ace_list = set(denied_subnets) - set(self.existing_ace_list)
