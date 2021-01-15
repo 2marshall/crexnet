@@ -242,17 +242,17 @@ class NetAutomationTasks:
                                 elif wildcard_mask == '0.0.0.127':
                                     cidr_mask = '25'
                                 elif wildcard_mask == '0.0.0.63':
-                                    wildcard_mask = '26'
+                                    cidr_mask = '26'
                                 elif wildcard_mask == '0.0.0.31':
-                                    wildcard_mask = '27'
+                                    cidr_mask = '27'
                                 elif wildcard_mask == '0.0.0.15':
-                                    wildcard_mask = '28'
+                                    cidr_mask = '28'
                                 elif wildcard_mask == '0.0.0.7':
-                                    wildcard_mask = '29'
+                                    cidr_mask = '29'
                                 elif wildcard_mask == '0.0.0.3':
-                                    wildcard_mask = '30'
+                                    cidr_mask = '30'
                                 elif wildcard_mask == '0.0.0.1':
-                                    wildcard_mask = '31'
+                                    cidr_mask = '31'
                                 else:
                                     wildcard_mask = None
                                     print("WILDCARD MASK TO CIDR CONVERSION FAILED. NO MATCH FOUND:  {}".format(acl_entry))
